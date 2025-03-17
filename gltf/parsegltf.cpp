@@ -186,6 +186,8 @@ static void parseMeshesGltf(cgltf_data* data, std::vector<Mesh>& meshes, std::ve
 
 			result.streams.reserve(primitive.attributes_count);
 
+			result.name = mesh.name;
+
 			size_t vertex_count = primitive.attributes_count ? primitive.attributes[0].data->count : 0;
 
 			if (primitive.indices)

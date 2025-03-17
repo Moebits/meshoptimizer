@@ -13,3 +13,6 @@
 # Test files
 /data/
 /*.log
+
+# Optional Git modules
+basis_universal

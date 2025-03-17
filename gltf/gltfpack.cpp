@@ -486,6 +486,8 @@ static size_t process(cgltf_data* data, const char* input_path, const char* outp
 	bool ext_texture_transform = false;
 	bool ext_texture_basisu = false;
 	bool ext_texture_webp = false;
+	bool ext_vrm = false;
+	bool ext_vrmc = false;
 
 	size_t accr_offset = 0;
 	size_t node_offset = 0;
@@ -589,7 +591,15 @@ static size_t process(cgltf_data* data, const char* input_path, const char* outp
 		const Mesh& mesh = meshes[i];
 
 		comma(json_meshes);
-		append(json_meshes, "{\"primitives\":[");
+		append(json_meshes, "{");
+		if (!mesh.name.empty())
+		{
+			append(json_meshes, "\"name\":\"");
+			append(json_meshes, mesh.name);
+			append(json_meshes, "\"");
+			comma(json_meshes);
+		}
+		append(json_meshes, "\"primitives\":[");
 
 		size_t pi = i;
 		for (; pi < meshes.size(); ++pi)
@@ -839,6 +849,29 @@ static size_t process(cgltf_data* data, const char* input_path, const char* outp
 		append(json_extensions, "]}");
 	}
 
+	if (data->data_extensions_count > 0) 
+	{
+		for (size_t i = 0; i < data->data_extensions_count; ++i) 
+		{
+			const cgltf_extension& ext = data->data_extensions[i];
+
+			if (strcmp(ext.name, "VRM") == 0)
+				ext_vrm = true;
+
+			if (strcmp(ext.name, "VRMC_vrm") == 0)
+				ext_vrmc = true;
+
+			if (ext_vrm || ext_vrmc)
+			{
+				comma(json_extensions);
+				append(json_extensions, "\"");
+				append(json_extensions, ext.name);
+				append(json_extensions, "\":");
+				appendJson(json_extensions, ext.data);
+			}
+		}
+	}
+
 	append(json, "\"asset\":{");
 	append(json, "\"version\":\"2.0\",\"generator\":\"gltfpack ");
 	append(json, getVersion());
@@ -868,6 +901,8 @@ static size_t process(cgltf_data* data, const char* input_path, const char* outp
 	    {"KHR_texture_basisu", (!json_textures.empty() && settings.texture_ktx2) || ext_texture_basisu, true},
 	    {"EXT_texture_webp", ext_texture_webp, true},
 	    {"EXT_mesh_gpu_instancing", ext_instancing, true},
+	    {"VRM", ext_vrm, false},
+	    {"VRMC_vrm", ext_vrmc, false},
 	};
 
 	for (size_t i = 0; i < data->extensions_required_count; ++i)
@@ -1016,7 +1051,7 @@ int gltfpack(const char* input, const char* output, const char* report, Settings
 	std::string iext = getExtension(input);
 	std::string oext = output ? getExtension(output) : "";
 
-	if (iext == ".gltf" || iext == ".glb")
+	if (iext == ".gltf" || iext == ".glb" || iext == ".vrm")
 	{
 		const char* error = NULL;
 		data = parseGltf(input, meshes, animations, &error);
@@ -1040,7 +1075,7 @@ int gltfpack(const char* input, const char* output, const char* report, Settings
 	}
 	else
 	{
-		fprintf(stderr, "Error loading %s: unknown extension (expected .gltf or .glb or .obj)\n", input);
+		fprintf(stderr, "Error loading %s: unknown extension (expected .gltf or .glb or .obj or .vrm)\n", input);
 		return 2;
 	}
 
@@ -1055,7 +1090,7 @@ int gltfpack(const char* input, const char* output, const char* report, Settings
 	}
 #endif
 
-	if (oext == ".glb")
+	if (oext == ".glb" || oext == ".vrm")
 	{
 		settings.texture_embed = true;
 	}
@@ -1135,7 +1170,7 @@ int gltfpack(const char* input, const char* output, const char* report, Settings
 			return 4;
 		}
 	}
-	else if (oext == ".glb")
+	else if (oext == ".glb" || oext == ".vrm")
 	{
 		std::string fbpath = output;
 		fbpath.replace(fbpath.size() - 4, 4, ".fallback.bin");
@@ -1185,7 +1220,7 @@ int gltfpack(const char* input, const char* output, const char* report, Settings
 	}
 	else
 	{
-		fprintf(stderr, "Error saving %s: unknown extension (expected .gltf or .glb)\n", output);
+		fprintf(stderr, "Error saving %s: unknown extension (expected .gltf or .glb or .vrm)\n", output);
 		return 4;
 	}
 
@@ -1581,9 +1616,9 @@ int main(int argc, char** argv)
 		if (help)
 		{
 			fprintf(stderr, "\nBasics:\n");
-			fprintf(stderr, "\t-i file: input file to process, .obj/.gltf/.glb\n");
-			fprintf(stderr, "\t-o file: output file path, .gltf/.glb\n");
-			fprintf(stderr, "\t-c: produce compressed gltf/glb files (-cc for higher compression ratio)\n");
+			fprintf(stderr, "\t-i file: input file to process, .obj/.gltf/.glb/.vrm\n");
+			fprintf(stderr, "\t-o file: output file path, .gltf/.glb/.vrm\n");
+			fprintf(stderr, "\t-c: produce compressed gltf/glb/vrm files (-cc for higher compression ratio)\n");
 			fprintf(stderr, "\nTextures:\n");
 			fprintf(stderr, "\t-tc: convert all textures to KTX2 with BasisU supercompression\n");
 			fprintf(stderr, "\t-tu: use UASTC when encoding textures (much higher quality and much larger size)\n");
@@ -1633,8 +1668,8 @@ int main(int argc, char** argv)
 			fprintf(stderr, "\t-mm: merge instances of the same mesh together when possible\n");
 			fprintf(stderr, "\t-mi: use EXT_mesh_gpu_instancing when serializing multiple mesh instances\n");
 			fprintf(stderr, "\nMiscellaneous:\n");
-			fprintf(stderr, "\t-cf: produce compressed gltf/glb files with fallback for loaders that don't support compression\n");
-			fprintf(stderr, "\t-noq: disable quantization; produces much larger glTF files with no extensions\n");
+			fprintf(stderr, "\t-cf: produce compressed gltf/glb/vrm files with fallback for loaders that don't support compression\n");
+			fprintf(stderr, "\t-noq: disable quantization; produces much larger glTF/VRM files with no extensions\n");
 			fprintf(stderr, "\t-v: verbose output (print version when used without other options)\n");
 			fprintf(stderr, "\t-r file: output a JSON report to file\n");
 			fprintf(stderr, "\t-h: display this help and exit\n");
@@ -1642,9 +1677,9 @@ int main(int argc, char** argv)
 		else
 		{
 			fprintf(stderr, "\nBasics:\n");
-			fprintf(stderr, "\t-i file: input file to process, .obj/.gltf/.glb\n");
-			fprintf(stderr, "\t-o file: output file path, .gltf/.glb\n");
-			fprintf(stderr, "\t-c: produce compressed gltf/glb files (-cc for higher compression ratio)\n");
+			fprintf(stderr, "\t-i file: input file to process, .obj/.gltf/.glb/.vrm\n");
+			fprintf(stderr, "\t-o file: output file path, .gltf/.glb/.vrm\n");
+			fprintf(stderr, "\t-c: produce compressed gltf/glb/vrm files (-cc for higher compression ratio)\n");
 			fprintf(stderr, "\t-tc: convert all textures to KTX2 with BasisU supercompression\n");
 			fprintf(stderr, "\t-si R: simplify meshes targeting triangle/point count ratio R (between 0 and 1)\n");
 			fprintf(stderr, "\nRun gltfpack -h to display a full list of options\n");

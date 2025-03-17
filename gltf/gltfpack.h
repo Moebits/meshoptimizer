@@ -46,6 +46,7 @@ struct Transform
 struct Mesh
 {
 	int scene;
+	std::string name;
 	std::vector<cgltf_node*> nodes;
 	std::vector<Transform> instances;
 
