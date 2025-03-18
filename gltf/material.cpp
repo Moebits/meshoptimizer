@@ -442,6 +442,8 @@ void markNeededMaterials(cgltf_data* data, std::vector<MaterialInfo>& materials,
 
 void markNeededTextures(std::vector<TextureInfo>& textures, const Settings& settings)
 {
+	size_t offset = 0;
+
 	// mark all textures as kept if requested
 	if (settings.keep_textures)
 	{
@@ -450,6 +452,9 @@ void markNeededTextures(std::vector<TextureInfo>& textures, const Settings& sett
 			TextureInfo& info = textures[i];
 
 			info.keep = true;
+			
+			info.remap = int(offset);
+			offset++;
 		}
 	}
 }
