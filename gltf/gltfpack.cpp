@@ -401,6 +401,7 @@ static size_t process(cgltf_data* data, const char* input_path, const char* outp
 
 	markNeededNodes(data, nodes, meshes, animations, settings);
 	markNeededMaterials(data, materials, meshes, settings);
+	markNeededTextures(textures, settings);
 
 #ifndef NDEBUG
 	std::vector<Mesh> debug_meshes;
@@ -1051,6 +1052,17 @@ int gltfpack(const char* input, const char* output, const char* report, Settings
 	std::string iext = getExtension(input);
 	std::string oext = output ? getExtension(output) : "";
 
+	if (iext == ".vrm")
+	{
+		// override settings that are always needed for VRM to work
+		settings.quantize = false;
+		settings.keep_attributes = true;
+		settings.keep_nodes = true;
+		settings.keep_materials = true;
+		settings.keep_textures = true;
+		settings.keep_extras = true;
+	}
+
 	if (iext == ".gltf" || iext == ".glb" || iext == ".vrm")
 	{
 		const char* error = NULL;
@@ -1381,6 +1393,10 @@ int main(int argc, char** argv)
 		else if (strcmp(arg, "-km") == 0)
 		{
 			settings.keep_materials = true;
+		}
+		else if (strcmp(arg, "-kt") == 0)
+		{
+			settings.keep_textures = true;
 		}
 		else if (strcmp(arg, "-ke") == 0)
 		{

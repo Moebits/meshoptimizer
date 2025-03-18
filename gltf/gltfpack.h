@@ -134,6 +134,7 @@ struct Settings
 
 	bool keep_nodes;
 	bool keep_materials;
+	bool keep_textures;
 	bool keep_extras;
 	bool keep_attributes;
 
@@ -332,6 +333,7 @@ void filterStreams(Mesh& mesh, const MaterialInfo& mi);
 
 void mergeMeshMaterials(cgltf_data* data, std::vector<Mesh>& meshes, const Settings& settings);
 void markNeededMaterials(cgltf_data* data, std::vector<MaterialInfo>& materials, const std::vector<Mesh>& meshes, const Settings& settings);
+void markNeededTextures(std::vector<TextureInfo>& textures, const Settings& settings);
 
 void mergeTextures(cgltf_data* data, std::vector<TextureInfo>& textures);
 

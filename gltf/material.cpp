@@ -440,6 +440,20 @@ void markNeededMaterials(cgltf_data* data, std::vector<MaterialInfo>& materials,
 	}
 }
 
+void markNeededTextures(std::vector<TextureInfo>& textures, const Settings& settings)
+{
+	// mark all textures as kept if requested
+	if (settings.keep_textures)
+	{
+		for (size_t i = 0; i < textures.size(); ++i)
+		{
+			TextureInfo& info = textures[i];
+
+			info.keep = true;
+		}
+	}
+}
+
 bool hasValidTransform(const cgltf_texture_view& view)
 {
 	if (view.has_transform)
