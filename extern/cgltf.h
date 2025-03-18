@@ -552,6 +552,8 @@ typedef struct cgltf_material
 	cgltf_bool has_diffuse_transmission;
 	cgltf_bool has_anisotropy;
 	cgltf_bool has_dispersion;
+	cgltf_bool has_hdr_emissive_multiplier;
+	cgltf_bool has_mtoon;
 	cgltf_pbr_metallic_roughness pbr_metallic_roughness;
 	cgltf_pbr_specular_glossiness pbr_specular_glossiness;
 	cgltf_clearcoat clearcoat;

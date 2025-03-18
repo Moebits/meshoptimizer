@@ -374,7 +374,10 @@ static size_t process(cgltf_data* data, const char* input_path, const char* outp
 
 	mergeTextures(data, textures);
 
-	optimizeMaterials(data, input_path, images);
+	if (!settings.keep_materials)
+	{
+		optimizeMaterials(data, input_path, images);
+	}
 
 	// streams need to be filtered before mesh merging (or processing) to make sure we can merge meshes with redundant streams
 	for (size_t i = 0; i < meshes.size(); ++i)
@@ -489,6 +492,12 @@ static size_t process(cgltf_data* data, const char* input_path, const char* outp
 	bool ext_texture_webp = false;
 	bool ext_vrm = false;
 	bool ext_vrmc = false;
+	bool ext_vrmc_hdr = false;
+	bool ext_vrmc_mtoon = false;
+	bool ext_vrmc_node = false;
+	bool ext_vrmc_springbone = false;
+	bool ext_vrmc_springbone_extended = false;
+	bool ext_vrmc_animation = false;
 
 	size_t accr_offset = 0;
 	size_t node_offset = 0;
@@ -583,6 +592,17 @@ static size_t process(cgltf_data* data, const char* input_path, const char* outp
 		ext_dispersion = ext_dispersion || material.has_dispersion;
 		ext_unlit = ext_unlit || material.unlit;
 		ext_texture_transform = ext_texture_transform || mi.uses_texture_transform;
+
+		for (size_t j = 0; j < material.extensions_count; ++j)
+		{
+			const cgltf_extension& ext = material.extensions[j];
+			
+			if (strcmp(ext.name, "VRMC_materials_hdr_emissiveMultiplier") == 0)
+				ext_vrmc_hdr = true;
+
+			if (strcmp(ext.name, "VRMC_materials_mtoon") == 0)
+				ext_vrmc_mtoon = true;
+		}
 	}
 
 	std::unordered_map<std::pair<uint64_t, uint64_t>, std::pair<size_t, size_t> > primitive_cache;
@@ -861,8 +881,21 @@ static size_t process(cgltf_data* data, const char* input_path, const char* outp
 
 			if (strcmp(ext.name, "VRMC_vrm") == 0)
 				ext_vrmc = true;
+			
+			if (strcmp(ext.name, "VRMC_node_constraint") == 0)
+				ext_vrmc_node = true;
 
-			if (ext_vrm || ext_vrmc)
+			if (strcmp(ext.name, "VRMC_springBone") == 0)
+				ext_vrmc_springbone = true;
+
+			if (strcmp(ext.name, "VRMC_springBone_extended_collider") == 0)
+				ext_vrmc_springbone_extended = true;
+
+			if (strcmp(ext.name, "VRMC_vrm_animation") == 0)
+				ext_vrmc_animation = true;
+
+			if (ext_vrm || ext_vrmc || ext_vrmc_node || ext_vrmc_springbone || 
+				ext_vrmc_springbone_extended || ext_vrmc_animation)
 			{
 				comma(json_extensions);
 				append(json_extensions, "\"");
@@ -883,7 +916,7 @@ static size_t process(cgltf_data* data, const char* input_path, const char* outp
 	const ExtensionInfo extensions[] = {
 	    {"KHR_mesh_quantization", settings.quantize, true},
 	    {"EXT_meshopt_compression", settings.compress, !settings.fallback},
-	    {"KHR_texture_transform", (settings.quantize && !settings.tex_float && !json_textures.empty()) || ext_texture_transform, false},
+	    {"KHR_texture_transform", (settings.quantize && !settings.tex_float && !json_textures.empty()) || (ext_vrm || ext_vrmc) || ext_texture_transform, false},
 	    {"KHR_materials_pbrSpecularGlossiness", ext_pbr_specular_glossiness, false},
 	    {"KHR_materials_clearcoat", ext_clearcoat, false},
 	    {"KHR_materials_transmission", ext_transmission, false},
@@ -904,6 +937,12 @@ static size_t process(cgltf_data* data, const char* input_path, const char* outp
 	    {"EXT_mesh_gpu_instancing", ext_instancing, true},
 	    {"VRM", ext_vrm, false},
 	    {"VRMC_vrm", ext_vrmc, false},
+		{"VRMC_materials_hdr_emissiveMultiplier", ext_vrmc_hdr, false},
+	    {"VRMC_materials_mtoon", ext_vrmc_mtoon, false},
+		{"VRMC_node_constraint", ext_vrmc_node, false},
+		{"VRMC_springBone", ext_vrmc_springbone, false},
+		{"VRMC_springBone_extended_collider", ext_vrmc_springbone_extended, false},
+		{"VRMC_vrm_animation", ext_vrmc_animation, false}
 	};
 
 	for (size_t i = 0; i < data->extensions_required_count; ++i)

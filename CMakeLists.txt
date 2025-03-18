@@ -86,8 +86,10 @@ endif()
 
 target_include_directories(meshoptimizer INTERFACE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>")
 
+set(WASM_FLAGS "-s EXPORTED_FUNCTIONS='[\"_webgltfpack\", \"_malloc\"]' -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"FS\",\"stringToUTF8\",\"setValue\"]' -s ALLOW_MEMORY_GROWTH=1")
+
 if(EMSCRIPTEN)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s EXPORTED_FUNCTIONS='[\"_webgltfpack\", \"_malloc\"]' -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"FS\",\"stringToUTF8\",\"setValue\"]' -s ALLOW_MEMORY_GROWTH=1 -s WASM=1")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WASM_FLAGS}")
 endif()
 
 if(MESHOPT_BUILD_SHARED_LIBS)
@@ -126,7 +128,7 @@ if(MESHOPT_BUILD_GLTFPACK)
     endif()
 
     if(EMSCRIPTEN)
-        set_target_properties(gltfpack PROPERTIES COMPILE_FLAGS "-s EXPORTED_FUNCTIONS='[\"_webgltfpack\", \"_malloc\"]' -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"FS\",\"stringToUTF8\",\"setValue\"]' -s ALLOW_MEMORY_GROWTH=1 -s WASM=1")
+        set_target_properties(gltfpack PROPERTIES COMPILE_FLAGS ${WASM_FLAGS})
     endif()
 
     if(NOT MESHOPT_BASISU_PATH STREQUAL "")

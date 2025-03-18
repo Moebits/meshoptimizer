@@ -16,9 +16,6 @@ cmake --build . --target gltfpack --config Release
 
 ## Compiling WASM
 ```c
-git clone -b gltfpack https://github.com/zeux/basis_universal
-mkdir build
-cd build
 emcmake cmake .. -DMESHOPT_BUILD_GLTFPACK=ON -DMESHOPT_BASISU_PATH=basis_universal -DCMAKE_BUILD_TYPE=Release
 cmake --build . --target gltfpack --config Release
 ```
