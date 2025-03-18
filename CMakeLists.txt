@@ -86,6 +86,10 @@ endif()
 
 target_include_directories(meshoptimizer INTERFACE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>")
 
+if(EMSCRIPTEN)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s EXPORTED_FUNCTIONS='[\"_webgltfpack\", \"_malloc\"]' -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"FS\",\"stringToUTF8\",\"setValue\"]' -s ALLOW_MEMORY_GROWTH=1 -s WASM=1")
+endif()
+
 if(MESHOPT_BUILD_SHARED_LIBS)
     set_target_properties(meshoptimizer PROPERTIES CXX_VISIBILITY_PRESET hidden)
     set_target_properties(meshoptimizer PROPERTIES VISIBILITY_INLINES_HIDDEN ON)
@@ -119,6 +123,10 @@ if(MESHOPT_BUILD_GLTFPACK)
     if(MESHOPT_BUILD_SHARED_LIBS)
         string(CONCAT RPATH "$ORIGIN/../" ${CMAKE_INSTALL_LIBDIR})
         set_target_properties(gltfpack PROPERTIES INSTALL_RPATH ${RPATH})
+    endif()
+
+    if(EMSCRIPTEN)
+        set_target_properties(gltfpack PROPERTIES COMPILE_FLAGS "-s EXPORTED_FUNCTIONS='[\"_webgltfpack\", \"_malloc\"]' -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"FS\",\"stringToUTF8\",\"setValue\"]' -s ALLOW_MEMORY_GROWTH=1 -s WASM=1")
     endif()
 
     if(NOT MESHOPT_BASISU_PATH STREQUAL "")

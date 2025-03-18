@@ -1779,3 +1779,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* buffer, size_t size)
 	return 0;
 }
 #endif
+
+extern "C" void webgltfpack(int argc, char** argv) 
+{
+    main(argc, argv);
+}
